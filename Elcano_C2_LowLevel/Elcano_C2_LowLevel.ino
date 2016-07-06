@@ -1,3 +1,5 @@
+#include <Settings.h>
+
 #include <SPI.h>
 #include <Elcano_Serial.h>
 
@@ -10,57 +12,6 @@ const int softwareRx = 7;   // not used
 
 #define LOOP_TIME_MS 400
 #define ERROR_HISTORY 20
-
-// Orange Trike
-//#define VEHICLE_NUMBER 1
-//#define RC_SPEKTRUM 
-//#undef  RC_HITEC
-
-// Yellow Trike
-#define VEHICLE_NUMBER 2
-#undef RC_SPEKTRUM 
-#define  RC_HITEC
-
-#if (VEHICLE_NUMBER == 1)
-//OUTPUT values -  0 to 255
-#define MIN_ACC_OUT 40
-#define MAX_ACC_OUT 227
-#define MIN_BRAKE_OUT 180
-#define MAX_BRAKE_OUT 250
-#define RIGHT_TURN_OUT 146
-#define LEFT_TURN_OUT 230
-#define STRAIGHT_TURN_OUT 180
-// Turn sensors are believed if they are in this range while wheels are straight
-#define RIGHT_MIN_COUNT 80
-#define RIGHT_MAX_COUNT 284
-#define LEFT_MIN_COUNT  80
-#define LEFT_MAX_COUNT  284
-#define DAC_CHANNEL 0    // output to motor actuator
-#define STEER_OUT_PIN 7 // Output to steer actuator
-#define BRAKE_OUT_PIN 6  // output to brake actuator
-
-#endif
-
-#if (VEHICLE_NUMBER == 2)
-
-//OUTPUT values -  0 to 255
-#define MIN_ACC_OUT 50
-#define MAX_ACC_OUT 227
-#define MIN_BRAKE_OUT 210
-#define MAX_BRAKE_OUT 254
-#define RIGHT_TURN_OUT 160 
-#define LEFT_TURN_OUT 254 
-#define STRAIGHT_TURN_OUT 192
-// Turn sensors are believed if they are in this range while wheels are straight
-#define RIGHT_MIN_COUNT 725
-#define RIGHT_MAX_COUNT 785
-#define LEFT_MIN_COUNT  880
-#define LEFT_MAX_COUNT  940
-#define DAC_CHANNEL 3
-#define STEER_OUT_PIN 7 // Output to steer actuator
-#define BRAKE_OUT_PIN 9  // output to brake actuator
-
-#endif
 
 /*================ReadTurnAngle ================*/
 // Value measured at analog input A2 from right steering column when wheels pointed straight ahead.
@@ -84,18 +35,18 @@ int Right_Max_Count = 808;
 // Channel order differs for differernt vehicles
 // Indices for information stored in arrays RC_rise, RC_elapsed, local_results,...
 // Right joystick left/right to D21
-#define RC_TURN 1
-#define RC_AUTO 2
-// Right joystick up/down to D19
-#define RC_GO   3
-// Red (Gear) Switch to D18
-#define RC_ESTP 4
-// Left joystick left/right to D20 
-#define RC_RDR  5
-// Left joystick up/down to D2
-#define RC_RVS  6
-// There are six channels, but we are limited to five interrupts
-#define NUMBER_CHANNELS 6
+//#define RC_TURN 1
+//#define RC_AUTO 2
+//// Right joystick up/down to D19
+//#define RC_GO   3
+//// Red (Gear) Switch to D18
+//#define RC_ESTP 4
+//// Left joystick left/right to D20 
+//#define RC_RDR  5
+//// Left joystick up/down to D2
+//#define RC_RVS  6
+//// There are six channels, but we are limited to five interrupts
+//#define NUMBER_CHANNELS 6
 
 // RC_rise contains the time value collected in the rising edge interrupts.
 // RC_elapsed contains the width of the pulse. The rise and fall interrupts
@@ -154,7 +105,7 @@ unsigned long calibrationTime_ms;
 unsigned long stoppedTime_ms;
 unsigned long straightTime_ms;
 int  throttle_control = MIN_ACC_OUT;
-int  brake_control = MAX_BRAKE_OUT;
+int  brake_control = MIN_BRAKE_OUT;
 int  steer_control = STRAIGHT_TURN_OUT;
 float Odometer_m = 0;
 float HubSpeed_kmPh;
@@ -252,7 +203,7 @@ void setup()
       PRR0 &= ~4; // turn off PRR0.PRSPI bit so power isn't off
       SPI.begin();
       for (int channel = 0; channel < 4; channel++)
-      DAC_Write (channel, 0); // reset did not clear previous states
+          DAC_Write (channel, 0); // reset did not clear previous states
       // put vehicle in initial state
       steer(STRAIGHT_TURN_OUT);
       brake(MAX_BRAKE_OUT);
@@ -303,7 +254,7 @@ void loop() {
     // got data;    
     for (int i = 0; i < 8; i++)
         local_results[i] = RC_elapsed[i];
-  Print7( false, local_results);
+    Print7( false, local_results);
     processRC(local_results);
     Print7( true, local_results);
   
@@ -389,20 +340,21 @@ void Print7 (bool processed, unsigned long results[7])
 }
 void LogData(unsigned long commands[7], SerialData *sensors)  // data for spreadsheet
 {
-     Serial.print(millis()); Serial.print("\t");
-     Serial.print(sensors->speed_cmPs); Serial.print("\t");
-     show7seg(sensors->speed_cmPs);
-     Serial.print(sensors->speed_cmPs*36.0/1000.); Serial.print("\t"); // km/hr
-     Serial.print(HubSpeed_kmPh); Serial.print("\t");
-     Serial.print(sensors->angle_deg); Serial.print("\t");
-     int right = analogRead(A2);
-     int left = analogRead(A3);
-     Serial.print(right); Serial.print("\t");
-     Serial.print(left); Serial.print("\t");
-     Serial.print(throttle_control); Serial.print("\t");
-     Serial.print(brake_control); Serial.print("\t");
-     Serial.print(steer_control); Serial.print("\t");
-     Serial.println(Odometer_m);
+//     Serial.print(millis()); Serial.print("\t");
+//     Serial.print(sensors->speed_cmPs); Serial.print("\t");
+//     
+//     Serial.print(sensors->speed_cmPs*36.0/1000.); Serial.print("\t"); // km/hr
+//     Serial.print(HubSpeed_kmPh); Serial.print("\t");\
+     show7seg(HubSpeed_kmPh);
+//     Serial.print(sensors->angle_deg); Serial.print("\t");
+//     int right = analogRead(A2);
+//     int left = analogRead(A3);
+//     Serial.print(right); Serial.print("\t");
+//     Serial.print(left); Serial.print("\t");
+//     Serial.print(throttle_control); Serial.print("\t");
+//     Serial.print(brake_control); Serial.print("\t");
+//     Serial.print(steer_control); Serial.print("\t");
+//     Serial.println(Odometer_m);
 //     Print7 (true, commands);
 }
 void PrintHeaders (void)
@@ -484,7 +436,7 @@ void processRC (unsigned long *results)
         moveVehicle(results[RC_GO]);
     }
     else
-        moveVehicle(MIN_ACC_OUT);
+        //moveVehicle(MIN_ACC_OUT);
         
     steer(results[RC_TURN]); 
     
@@ -562,17 +514,20 @@ int convertThrottle(int input)
           trueOut = MAX_ACC_OUT;
       return trueOut;
 }
+
 //Tests for inputs
 // Input not in throttle dead zone
 boolean liveThrottle(int acc)
 {
       return (acc > MIDDLE + DEAD_ZONE);
 }
+
 // Input is not in brake dead zone
 boolean liveBrake(int brake)
 {
       return (brake < MIDDLE - DEAD_ZONE);
 }
+
 // Emergency stop
 void E_Stop()
 {
@@ -581,6 +536,7 @@ void E_Stop()
     delay (2000);   // inhibit output
     // TO DO: disable 36V power
 }
+
 //Send values to output pin
 void steer(int pos)
 {
@@ -691,12 +647,6 @@ void moveVehicle(int acc)
 #define SerialOdoOut  Serial3
 #define SerialMonitor Serial
 
-#if (VEHICLE_NUMBER == 1)
-#define WHEEL_DIAMETER_MM 397
-#endif
-#if (VEHICLE_NUMBER == 2)
-#define WHEEL_DIAMETER_MM 500
-#endif
 #define MEG 1000000
 #define MAX_SPEED_KPH 50
 #define MAX_SPEED_mmPs   ((MAX_SPEED_KPH * MEG) / 3600)
@@ -771,10 +721,10 @@ void WheelRev()
 void setupWheelRev() 
 { 
 
-    SerialOdoOut.begin(115200); // C6 to C4        
-    pinMode(13, OUTPUT); //led
-    digitalWrite(13, LOW);//turn LED off
-    
+//    SerialOdoOut.begin(115200); // C6 to C4        
+//    pinMode(13, OUTPUT); //led
+//    digitalWrite(13, LOW);//turn LED off
+//    
     pinMode(3, INPUT);//pulls input HIGH
     float MinTick = WHEEL_DIAMETER_MM * PI;
 //    SerialMonitor.print (" MinTick = ");
@@ -1179,9 +1129,11 @@ void show7seg(int speed_mmPs)
   // Magical sprintf creates a string for us to send to the s7s.
   //  The %4d option creates a 4-digit integer.
   sprintf(tempString, "%4d", speed_kmPhx10);
-//  Serial.println(tempString);
+  String temp3 = (String)tempString;
+  Serial.println(temp3);
+
   // This will output the tempString to the S7S
-  s7s.print(tempString);
+  s7s.print(temp3);
   setDecimals(0b00000100);  // Sets digit 3 decimal on
 }
 
